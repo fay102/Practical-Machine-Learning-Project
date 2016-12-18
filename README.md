@@ -16,7 +16,7 @@ Dimension of the data
 > dim(testing.raw)
 [1]  20 160
 ```
-Data cleaning: remove data with large portion of missing values.
+Data cleaning: we first remove data with large portion (more than 70%) of missing values, then pick up the predictors which are related to the response variable.
 ```r
 > removeIndx<-which(colSums(is.na(training.raw))>(ncol(training.raw)*0.7))
 > train.clean <- training.raw[,-c(removeIndx)]
@@ -38,7 +38,13 @@ Data partition: split the cleaned raw training data set into two parts: 70% for 
 [1] 5885   53 
 ```
 ## 3.Modeling
+We applied Random Forest and Decision Tree to fit the training data set. For Random Forest, a 5-fold cross validation is used to determine the optimal value of mtry. For Decision Tree, we also used 5-fold cross validation to choose the best complexity parameter. 
 ### 3.1 Random Forest
+```r
+
+```
 ### 3.2 Decision Tree
-### 3.3 Ensemble
+```r
+
+```
 ## 4. Prediction on Test Data Set
