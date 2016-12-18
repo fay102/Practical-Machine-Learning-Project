@@ -38,7 +38,8 @@ Data partition: split the cleaned raw training data set into two parts: 70% for 
 [1] 5885   53 
 ```
 ## 3.Modeling
-We applied Random Forest and Decision Tree to fit the training data set. For Random Forest, a 5-fold cross validation is used to determine the optimal value of mtry. For Decision Tree, we also used 5-fold cross validation to choose the best complexity parameter. 
+We applied Random Forest, Decision Tree and GBM to fit the training data set. For Random Forest, a 5-fold cross validation is used to determine the optimal value of mtry. For Decision Tree, we also used 5-fold cross validation to choose the best complexity parameter. In GBM, tuning parameters are also determined through cross validation. At the end, we compared the performance of these three methods based on the out-of-sample errors.
+
 ### 3.1 Random Forest
 ```r
 > fit.rf <- train(classe ~ ., data=training, method="rf", trControl=control, ntree=300)
@@ -62,7 +63,7 @@ Resampling results across tuning parameters:
 Accuracy was used to select the optimal model using  the largest value.
 The final value used for the model was mtry = 2. 
 ```
-The optimal value of mtry obtained from the cross validation is 2. Then we applied our fitted model to the validation set. The out-of-sample accurary is reported.  
+The optimal value of mtry obtained from the cross validation is 2. Then we applied our fitted model to the validation set. The out-of-sample errors are reported.  
 ```r
 > pred.rf <- predict(fit.rf, valid)
 > confusionMatrix(pred.rf, valid$classe)
@@ -85,19 +86,9 @@ Overall Statistics
                                           
                   Kappa : 0.9871          
  Mcnemar's Test P-Value : NA              
-
-Statistics by Class:
-
-                     Class: A Class: B Class: C Class: D Class: E
-Sensitivity            0.9994   0.9877   0.9844   0.9741   0.9963
-Specificity            0.9979   0.9968   0.9938   0.9990   0.9998
-Pos Pred Value         0.9946   0.9868   0.9712   0.9947   0.9991
-Neg Pred Value         0.9998   0.9970   0.9967   0.9949   0.9992
-Prevalence             0.2845   0.1935   0.1743   0.1638   0.1839
-Detection Rate         0.2843   0.1912   0.1716   0.1596   0.1832
-Detection Prevalence   0.2858   0.1937   0.1767   0.1604   0.1833
-Balanced Accuracy      0.9986   0.9923   0.9891   0.9865   0.9980
 ```
+Accuracy = 0.9898, out-of-sample error = 0.0102.
+
 ### 3.2 Decision Tree
 ```r
 > rpart.grid <- expand.grid(.cp=seq(0.01,0.05,0.01)) 
@@ -124,19 +115,83 @@ Overall Statistics
                                           
                   Kappa : 0.6467          
  Mcnemar's Test P-Value : < 2.2e-16       
+```
+Accurary = 0.722, out-of-sample error = 0.278.
 
-Statistics by Class:
+### 3.3 GBM
+```r
+> fit.gbm <- train(classe ~., method="gbm", data=training, trControl=control, verbose=F)
+Loading required package: plyr
 
-                     Class: A Class: B Class: C Class: D Class: E
-Sensitivity            0.8949   0.5874   0.7203  0.57365   0.7301
-Specificity            0.9060   0.9357   0.9097  0.94717   0.9509
-Pos Pred Value         0.7909   0.6869   0.6273  0.68020   0.7700
-Neg Pred Value         0.9559   0.9043   0.9390  0.91897   0.9399
-Prevalence             0.2845   0.1935   0.1743  0.16381   0.1839
-Detection Rate         0.2545   0.1137   0.1256  0.09397   0.1342
-Detection Prevalence   0.3218   0.1655   0.2002  0.13815   0.1743
-Balanced Accuracy      0.9004   0.7615   0.8150  0.76041   0.8405
-> fancyRpartPlot(fit.tree$finalModel)
+Attaching package: ‘plyr’
+
+The following object is masked from ‘package:lubridate’:
+
+    here
+
+> fit.gbm
+Stochastic Gradient Boosting 
+
+13737 samples
+   52 predictor
+    5 classes: 'A', 'B', 'C', 'D', 'E' 
+
+No pre-processing
+Resampling: Cross-Validated (5 fold) 
+Summary of sample sizes: 10989, 10989, 10991, 10990, 10989 
+Resampling results across tuning parameters:
+
+  interaction.depth  n.trees  Accuracy   Kappa    
+  1                   50      0.7530035  0.6869478
+  1                  100      0.8256543  0.7793491
+  1                  150      0.8541174  0.8153851
+  2                   50      0.8579759  0.8199875
+  2                  100      0.9083495  0.8839819
+  2                  150      0.9336827  0.9160723
+  3                   50      0.8956839  0.8679213
+  3                  100      0.9413268  0.9257482
+  3                  150      0.9611996  0.9509051
+
+Tuning parameter 'shrinkage' was held constant at a value of 0.1
+
+Tuning parameter 'n.minobsinnode' was held constant at a value of 10
+Accuracy was used to select the optimal model using  the largest value.
+The final values used for the model were n.trees = 150, interaction.depth =
+ 3, shrinkage = 0.1 and n.minobsinnode = 10. 
+ ```
+ 
+ ```r
+> pred.gbm <- predict(fit.gbm, valid)
+> confusionMatrix(pred.gbm, valid$classe)
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    A    B    C    D    E
+         A 1644   44    0    1    2
+         B   17 1059   34    2   16
+         C    5   33  971   34    5
+         D    8    3   19  916   20
+         E    0    0    2   11 1039
+
+Overall Statistics
+                                         
+               Accuracy : 0.9565         
+                 95% CI : (0.951, 0.9616)
+    No Information Rate : 0.2845         
+    P-Value [Acc > NIR] : < 2.2e-16      
+                                         
+                  Kappa : 0.945          
+ Mcnemar's Test P-Value : 4.518e-07      
 
 ```
+Accurary = 0.9565, out-of-sample error = 0.0435.
+
+Conclusion: Since Random Forest has the lowest out-of-sample error, we prefer using Random Forest in prediction on the test data set.
+
 ## 4. Prediction on Test Data Set
+Now we applied Random Forest to the testing data set to obtain the predictions. The result is shown below:
+```r
+> pred.test <- predict(fit.rf, testing)
+> pred.test
+ [1] B A B A A E D B A A B C B A E E A B B B
+Levels: A B C D E```
