@@ -194,4 +194,5 @@ Now we applied Random Forest to the testing data set to obtain the predictions. 
 > pred.test <- predict(fit.rf, testing)
 > pred.test
  [1] B A B A A E D B A A B C B A E E A B B B
-Levels: A B C D E```
+Levels: A B C D E
+```
